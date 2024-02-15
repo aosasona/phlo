@@ -6,7 +6,6 @@ namespace Phlo\Core;
 
 class Runner
 {
-	private readonly string $ROOT_DIR;
 	private Context $ctx;
 	private Rule $rule;
 
@@ -14,7 +13,6 @@ class Runner
 	{
 		$this->ctx = $ctx;
 		$this->rule = $rule;
-		$this->ROOT_DIR = dirname(__DIR__, 2);
 	}
 
 	public function run(): never
@@ -59,7 +57,7 @@ class Runner
 		$resources = $this->getRequestResources();
 		if (!$resources) {
 			http_response_code(404);
-			$not_found_file = "{$this->ROOT_DIR}/{$this->rule->target}/404.html";
+			$not_found_file = "{$this->rule->target}/404.html";
 			if (is_file($not_found_file)) {
 				header("Content-Type: text/html; charset=utf-8");
 				readfile($not_found_file);
@@ -92,11 +90,10 @@ class Runner
 		$accepted_mime_types = $this->getMimeTypesAsString();
 		$this->setCommonHeaders($accepted_mime_types);
 
-		$file = "{$this->ROOT_DIR}/{$this->rule->target}";
 
-		if (!is_file($file)) {
+		if (!is_file($this->rule->target)) {
 			http_response_code(404);
-			$not_found_file = "{$this->ROOT_DIR}/{$this->rule->target}/404.html";
+			$not_found_file = "{$this->rule->target}/404.html";
 			if (is_file($not_found_file)) {
 				header("Content-Type: text/html; charset=utf-8");
 				readfile($not_found_file);
@@ -104,16 +101,16 @@ class Runner
 			exit;
 		}
 
-		$mime_type = self::getMimeTypeFromPath($file);
+		$mime_type = self::getMimeTypeFromPath($this->rule->target);
 		header("Content-Type: {$mime_type}");
-		readfile($file);
+		readfile($this->rule->target);
 		exit;
 	}
 
 	private function getRequestResources(): array | null
 	{
 		$start_time = microtime(true);
-		$resource_dir = "{$this->ROOT_DIR}/{$this->rule->target}";
+		$resource_dir = $this->rule->target;
 		$resource_file = null;
 		$params = [];
 
@@ -182,7 +179,7 @@ class Runner
 
 		// make sure it is an exact match by comparing the number of path parts in the request with the number of path parts in the rule (excluding the route prefix)
 		// while these could have been all chained together, they are separated into individual variables for readability
-		$rule_root_parts_count = count(explode("/", trim("{$this->ROOT_DIR}/{$this->rule->target}", "/")));
+		$rule_root_parts_count = count(explode("/", trim("{$this->rule->target}", "/")));
 		$abs_resource_file_parts_count = count(explode("/", trim("{$resource_dir}/" . ($resource_file ?? ""), "/")));
 		$matched_resource_count = $abs_resource_file_parts_count - $rule_root_parts_count;
 		$required_match = count($this->ctx->path_parts) - count(explode("/", $this->rule->prefix ?? ""));
@@ -363,8 +360,8 @@ class Runner
 	{
 		header("Content-Type: application/json");
 		http_response_code(404);
-		if (is_file("{$this->ROOT_DIR}/{$this->rule->target}/404.json")) {
-			require_once "{$this->ROOT_DIR}/{$this->rule->target}/404.json";
+		if (is_file("{$this->rule->target}/404.json")) {
+			require_once "{$this->rule->target}/404.json";
 		} else {
 			echo "{\"ok\": false,\"message\": \"Cannot {$this->ctx->method} {$this->ctx->uri}\"}";
 		}
