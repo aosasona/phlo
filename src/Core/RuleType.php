@@ -1,6 +1,6 @@
 <?php
 
-namespace Trulyao\Phlo\Core;
+namespace Phlo\Core;
 
 enum RuleType: string
 {

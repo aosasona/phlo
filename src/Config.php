@@ -1,6 +1,6 @@
 <?php
 
-namespace Trulyao\Phlo;
+namespace Phlo;
 
 use Exception;
 

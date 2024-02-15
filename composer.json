@@ -1,19 +1,19 @@
 {
-    "name": "trulyao/phlo",
-    "description": "A tiny microframework for rapid modern web development",
-    "type": "library",
-    "require": {
-        "php": ">=8.2"
-    },
-    "autoload": {
-        "psr-4": {
-            "Trulyao\\Phlo\\": "src/"
-        }
-    },
-    "authors": [
-        {
-            "name": "Ayodeji O",
-            "email": "97124713+aosasona@users.noreply.github.com"
-        }
-    ]
+	"name": "trulyao/phlo",
+	"description": "A tiny microframework for rapid modern web development",
+	"type": "library",
+	"require": {
+		"php": ">=8.2"
+	},
+	"autoload": {
+		"psr-4": {
+			"Phlo\\": "src/"
+		}
+	},
+	"authors": [
+		{
+			"name": "Ayodeji O",
+			"email": "97124713+aosasona@users.noreply.github.com"
+		}
+	]
 }

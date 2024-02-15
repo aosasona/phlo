@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Trulyao\Phlo\Core;
+namespace Phlo\Core;
 
 class Runner
 {
@@ -332,32 +332,32 @@ class Runner
 		};
 	}
 
-	private function showDebugInfo()
-	{
-		/**
-		 * @var int    $matched_resource_count
-		 * @var int    $required_match
-		 * @var string $resource_dir
-		 * @var string $resource_file
-		 * @var string $rule_prefix
-		 * @var string $absolute_path_with_rule_prefix
-		 * @var array  $path_parts
-		 * @var array  $absolute_path
-		 *
-		 */
-		header("Content-Type: application/json");
-		echo json_encode([
-			"matched_resource_count" => $matched_resource_count,
-			"required_match" => $required_match,
-			"resource_dir" => $resource_dir,
-			"resource_file" => $resource_file,
-			"rule_prefix" => $this->rule->prefix ?? "",
-			"absolute_path_with_rule_prefix" => "{$this->ROOT_DIR}/{$this->rule->prefix}",
-			"path_parts" => $this->ctx->path_parts,
-			"absolute_path" => explode("/", trim("{$this->ROOT_DIR}/{$this->rule->target}", "/"))
-		]);
-		exit;
-	}
+	// private function showDebugInfo()
+	// {
+	// 	/**
+	// 	 * @var int    $matched_resource_count
+	// 	 * @var int    $required_match
+	// 	 * @var string $resource_dir
+	// 	 * @var string $resource_file
+	// 	 * @var string $rule_prefix
+	// 	 * @var string $absolute_path_with_rule_prefix
+	// 	 * @var array  $path_parts
+	// 	 * @var array  $absolute_path
+	// 	 *
+	// 	 */
+	// 	header("Content-Type: application/json");
+	// 	echo json_encode([
+	// 		"matched_resource_count" => $matched_resource_count,
+	// 		"required_match" => $required_match,
+	// 		"resource_dir" => $resource_dir,
+	// 		"resource_file" => $resource_file,
+	// 		"rule_prefix" => $this->rule->prefix ?? "",
+	// 		"absolute_path_with_rule_prefix" => "{$this->ROOT_DIR}/{$this->rule->prefix}",
+	// 		"path_parts" => $this->ctx->path_parts,
+	// 		"absolute_path" => explode("/", trim("{$this->ROOT_DIR}/{$this->rule->target}", "/"))
+	// 	]);
+	// 	exit;
+	// }
 
 	private function handleAPIRuleNotFound(): never
 	{

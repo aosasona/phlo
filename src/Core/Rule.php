@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Trulyao\Phlo\Core;
+namespace Phlo\Core;
 
 
 class Rule

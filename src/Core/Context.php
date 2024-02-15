@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Trulyao\Phlo\Core;
+namespace Phlo\Core;
 
 use Exception;
-use Trulyao\Phlo\Config;
+use Phlo\Config;
 
 
 class Context
