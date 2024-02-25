@@ -294,71 +294,87 @@ class Runner
 		$extension = pathinfo($filepath, PATHINFO_EXTENSION);
 		// mime_content_type fails on some systems, so we do a manual lookup first and fallback to mime_content_type
 		return match ($extension) {
-			"php" => $rule_type === RuleType::API ? "" : "text/html", // in API routes, the `$ctx->send` method is used to control the response type
-			"js" => "application/javascript",
-			"css" => "text/css",
-			"html" => "text/html",
-			"json" => "application/json",
-			"jpg", "jpeg" => "image/jpeg",
-			"png" => "image/png",
-			"gif" => "image/gif",
-			"svg" => "image/svg+xml",
-			"ico" => "image/x-icon",
-			"txt" => "text/plain",
-			"pdf" => "application/pdf",
-			"zip" => "application/zip",
-			"rar" => "application/x-rar-compressed",
-			"tar" => "application/x-tar",
-			"gz", "tar.gz" => "application/gzip",
-			"mp3" => "audio/mpeg",
-			"mp4" => "video/mp4",
-			"webm" => "video/webm",
-			"ogg" => "audio/ogg",
-			"wav" => "audio/wav",
-			"webp" => "image/webp",
+			"aac" => "audio/aac",
+			"abw" => "application/x-abiword",
+			"apng" => "image/apng",
+			"arc" => "application/x-freearc",
+			"avif" => "image/avif",
+			"avi" => "video/x-msvideo",
+			"azw" => "application/vnd.amazon.ebook",
 			"bmp" => "image/bmp",
+			"bz" => "application/x-bzip",
+			"bz2" => "application/x-bzip2",
+			"cda" => "application/x-cdf",
+			"csh" => "application/x-csh",
+			"css" => "text/css",
 			"csv" => "text/csv",
-			"xml" => "application/xml",
-			"xls" => "application/vnd.ms-excel",
-			"xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 			"doc" => "application/msword",
 			"docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+			"eot" => "application/vnd.ms-fontobject",
+			"epub" => "application/epub+zip",
+			"gz" => "application/gzip",
+			"gif" => "image/gif",
+			"htc" => "text/x-component",
+			"htm" | "html" | "stm" => "text/html",
+			"htt" => "text/webviewhtml",
+			"ico" => "image/vnd.microsoft.icon",
+			"ics" => "text/calendar",
+			"jar" => "application/java-archive",
+			"jpeg" | "jpg" => "image/jpeg",
+			"js" | "mjs" => "text/javascript",
+			"json" => "application/json",
+			"jsonld" => "application/ld+json",
+			"mid" | "midi" => "audio/midi",
+			"mht" | "mhtml" | "nws" => "message/rfc822",
+			"mp3" => "audio/mpeg",
+			"mp4" => "video/mp4",
+			"mpeg" | "mpg" | "mpa" | "mpe" | "mp2" | "mpv2" => "video/mpeg",
+			"mpkg" => "application/vnd.apple.installer+xml",
+			"mov" | "qt" => "video/quicktime",
+			"odp" => "application/vnd.oasis.opendocument.presentation",
+			"ods" => "application/vnd.oasis.opendocument.spreadsheet",
+			"odt" => "application/vnd.oasis.opendocument.text",
+			"oga" => "audio/ogg",
+			"ogv" => "video/ogg",
+			"ogx" => "application/ogg",
+			"opus" => "audio/opus",
+			"otf" => "font/otf",
+			"png" => "image/png",
+			"pdf" => "application/pdf",
+			"php" => $rule_type === RuleType::API ? "" : "text/html", // in API routes, the `$ctx->send` method is used to control the response type, we don't want to set it to the proper x-httpd-php MIME type here because it will literally send the PHP file to the client; horrible security risk
 			"ppt" => "application/vnd.ms-powerpoint",
 			"pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-			"odt" => "application/vnd.oasis.opendocument.text",
+			"rgb" => "image/x-rgb",
+			"rar" => "application/vnd.rar",
 			"rtf" => "application/rtf",
+			"rtx" => "text/richtext",
+			"sh" => "application/x-sh",
+			"svg" => "image/svg+xml",
+			"tar" => "application/x-tar",
+			"tif" | "tiff" => "image/tiff",
+			"ts" => "video/mp2t",
+			"ttf" => "font/ttf",
+			"txt" | "c" | "h" | "bas" => "text/plain",
+			"vcf" => "text/vcard",
+			"vsd" => "application/vnd.visio",
+			"wav" => "audio/wav",
+			"weba" => "audio/webm",
+			"webm" => "video/webm",
+			"webp" => "image/webp",
+			"woff" => "font/woff",
+			"woff2" => "font/woff2",
+			"xhtml" => "application/xhtml+xml",
+			"xls" => "application/vnd.ms-excel",
+			"xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+			"xml" => "text/xml",
+			"xul" => "application/vnd.mozilla.xul+xml",
+			"zip" => "application/zip",
+			"3gp" => "video/3gpp",
+			"3g2" => "video/3gpp2",
 			"7z" => "application/x-7z-compressed",
-			"tar.xz" => "application/x-xz",
 			default => mime_content_type(basename($filepath))
 		};
 	}
-
-	// private function showDebugInfo()
-	// {
-	// 	/**
-	// 	 * @var int    $matched_resource_count
-	// 	 * @var int    $required_match
-	// 	 * @var string $resource_dir
-	// 	 * @var string $resource_file
-	// 	 * @var string $rule_prefix
-	// 	 * @var string $absolute_path_with_rule_prefix
-	// 	 * @var array  $path_parts
-	// 	 * @var array  $absolute_path
-	// 	 *
-	// 	 */
-	// 	header("Content-Type: application/json");
-	// 	echo json_encode([
-	// 		"matched_resource_count" => $matched_resource_count,
-	// 		"required_match" => $required_match,
-	// 		"resource_dir" => $resource_dir,
-	// 		"resource_file" => $resource_file,
-	// 		"rule_prefix" => $this->rule->prefix ?? "",
-	// 		"absolute_path_with_rule_prefix" => "{$this->ROOT_DIR}/{$this->rule->prefix}",
-	// 		"path_parts" => $this->ctx->path_parts,
-	// 		"absolute_path" => explode("/", trim("{$this->ROOT_DIR}/{$this->rule->target}", "/"))
-	// 	]);
-	// 	exit;
-	// }
 
 	private function handleAPIRuleNotFound(): never
 	{
