@@ -57,31 +57,32 @@ class Runner
 		$resources = $this->getRequestResources();
 		if (!$resources) {
 			http_response_code(404);
+
 			$not_found_file = "{$this->rule->target}/404.html";
 			if (is_file($not_found_file)) {
 				header("Content-Type: text/html; charset=utf-8");
 				readfile($not_found_file);
 			}
+
 			exit;
 		}
 
 		$this->executeFolderScopedMiddleware($resources['dir'] ?? "");
 		$file = "{$resources['dir']}/{$resources['file']}";
-		$mime_type = self::getMimeTypeFromPath($file);
+		$mime_type = self::getMimeTypeFromPath($resources['file'], $this->rule->rule_type);
 		header("Content-Type: $mime_type");
 
 		// make the ctx available to the file
 		$ctx = $this->ctx;
 
-		require $file;
+		require_once $file;
 		exit;
 	}
 
 
 	private function serveRedirect(): never
 	{
-		http_response_code(301);
-		header("Location: " . $this->rule->target);
+		header("Location: " . $this->rule->target, true, 301);
 		exit;
 	}
 
@@ -101,7 +102,7 @@ class Runner
 			exit;
 		}
 
-		$mime_type = self::getMimeTypeFromPath($this->rule->target);
+		$mime_type = self::getMimeTypeFromPath($this->rule->target, $this->rule->rule_type);
 		header("Content-Type: {$mime_type}");
 		readfile($this->rule->target);
 		exit;
@@ -109,7 +110,6 @@ class Runner
 
 	private function getRequestResources(): array | null
 	{
-		$start_time = microtime(true);
 		$resource_dir = $this->rule->target;
 		$resource_file = null;
 		$params = [];
@@ -172,9 +172,13 @@ class Runner
 			}
 		}
 
-		// for static resources, if the path is "" (empty string), check if index.html exists
-		if (count($this->ctx->path_parts) == 0 && is_file("{$resource_dir}/index.html")) {
-			$resource_file = "index.html";
+		// if we somehow ended up with no target file, check if it contains an index.php or index.html, this works in a case where we have `/` as the path or the request matches a folder; in that case, we want to go into the folder to find the index file
+		if (empty($resource_file)) {
+			if (is_file("{$resource_dir}/index.html")) {
+				$resource_file = "index.html";
+			} elseif (is_file("{$resource_dir}/index.php")) {
+				$resource_file = "index.php";
+			}
 		}
 
 		// make sure it is an exact match by comparing the number of path parts in the request with the number of path parts in the rule (excluding the route prefix)
@@ -193,7 +197,6 @@ class Runner
 			"dir" => $resource_dir,
 			"file" => $resource_file,
 			"params" => $params,
-			"time_taken" => microtime(true) - $start_time,
 		];
 	}
 
@@ -285,76 +288,92 @@ class Runner
 		]);
 	}
 
-	public static function getMimeTypeFromPath(string $filepath): string
+	public static function getMimeTypeFromPath(string $filepath, RuleType $rule_type): string
 	{
 		$extension = pathinfo($filepath, PATHINFO_EXTENSION);
 		// mime_content_type fails on some systems, so we do a manual lookup first and fallback to mime_content_type
 		return match ($extension) {
-			"php" => "",
-			"js" => "application/javascript",
-			"css" => "text/css",
-			"html" => "text/html",
-			"json" => "application/json",
-			"jpg", "jpeg" => "image/jpeg",
-			"png" => "image/png",
-			"gif" => "image/gif",
-			"svg" => "image/svg+xml",
-			"ico" => "image/x-icon",
-			"txt" => "text/plain",
-			"pdf" => "application/pdf",
-			"zip" => "application/zip",
-			"rar" => "application/x-rar-compressed",
-			"tar" => "application/x-tar",
-			"gz", "tar.gz" => "application/gzip",
-			"mp3" => "audio/mpeg",
-			"mp4" => "video/mp4",
-			"webm" => "video/webm",
-			"ogg" => "audio/ogg",
-			"wav" => "audio/wav",
-			"webp" => "image/webp",
+			"aac" => "audio/aac",
+			"abw" => "application/x-abiword",
+			"apng" => "image/apng",
+			"arc" => "application/x-freearc",
+			"avif" => "image/avif",
+			"avi" => "video/x-msvideo",
+			"azw" => "application/vnd.amazon.ebook",
 			"bmp" => "image/bmp",
+			"bz" => "application/x-bzip",
+			"bz2" => "application/x-bzip2",
+			"cda" => "application/x-cdf",
+			"csh" => "application/x-csh",
+			"css" => "text/css",
 			"csv" => "text/csv",
-			"xml" => "application/xml",
-			"xls" => "application/vnd.ms-excel",
-			"xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 			"doc" => "application/msword",
 			"docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+			"eot" => "application/vnd.ms-fontobject",
+			"epub" => "application/epub+zip",
+			"gz" => "application/gzip",
+			"gif" => "image/gif",
+			"htc" => "text/x-component",
+			"htm" | "html" | "stm" => "text/html",
+			"htt" => "text/webviewhtml",
+			"ico" => "image/vnd.microsoft.icon",
+			"ics" => "text/calendar",
+			"jar" => "application/java-archive",
+			"jpeg" | "jpg" => "image/jpeg",
+			"js" | "mjs" => "text/javascript",
+			"json" => "application/json",
+			"jsonld" => "application/ld+json",
+			"mid" | "midi" => "audio/midi",
+			"mht" | "mhtml" | "nws" => "message/rfc822",
+			"mp3" => "audio/mpeg",
+			"mp4" => "video/mp4",
+			"mpeg" | "mpg" | "mpa" | "mpe" | "mp2" | "mpv2" => "video/mpeg",
+			"mpkg" => "application/vnd.apple.installer+xml",
+			"mov" | "qt" => "video/quicktime",
+			"odp" => "application/vnd.oasis.opendocument.presentation",
+			"ods" => "application/vnd.oasis.opendocument.spreadsheet",
+			"odt" => "application/vnd.oasis.opendocument.text",
+			"oga" => "audio/ogg",
+			"ogv" => "video/ogg",
+			"ogx" => "application/ogg",
+			"opus" => "audio/opus",
+			"otf" => "font/otf",
+			"png" => "image/png",
+			"pdf" => "application/pdf",
+			"php" => $rule_type === RuleType::API ? "" : "text/html", // in API routes, the `$ctx->send` method is used to control the response type, we don't want to set it to the proper x-httpd-php MIME type here because it will literally send the PHP file to the client; horrible security risk
 			"ppt" => "application/vnd.ms-powerpoint",
 			"pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-			"odt" => "application/vnd.oasis.opendocument.text",
+			"rgb" => "image/x-rgb",
+			"rar" => "application/vnd.rar",
 			"rtf" => "application/rtf",
+			"rtx" => "text/richtext",
+			"sh" => "application/x-sh",
+			"svg" => "image/svg+xml",
+			"tar" => "application/x-tar",
+			"tif" | "tiff" => "image/tiff",
+			"ts" => "video/mp2t",
+			"ttf" => "font/ttf",
+			"txt" | "c" | "h" | "bas" => "text/plain",
+			"vcf" => "text/vcard",
+			"vsd" => "application/vnd.visio",
+			"wav" => "audio/wav",
+			"weba" => "audio/webm",
+			"webm" => "video/webm",
+			"webp" => "image/webp",
+			"woff" => "font/woff",
+			"woff2" => "font/woff2",
+			"xhtml" => "application/xhtml+xml",
+			"xls" => "application/vnd.ms-excel",
+			"xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+			"xml" => "text/xml",
+			"xul" => "application/vnd.mozilla.xul+xml",
+			"zip" => "application/zip",
+			"3gp" => "video/3gpp",
+			"3g2" => "video/3gpp2",
 			"7z" => "application/x-7z-compressed",
-			"tar.xz" => "application/x-xz",
-			default => mime_content_type($filepath)
+			default => mime_content_type(basename($filepath))
 		};
 	}
-
-	// private function showDebugInfo()
-	// {
-	// 	/**
-	// 	 * @var int    $matched_resource_count
-	// 	 * @var int    $required_match
-	// 	 * @var string $resource_dir
-	// 	 * @var string $resource_file
-	// 	 * @var string $rule_prefix
-	// 	 * @var string $absolute_path_with_rule_prefix
-	// 	 * @var array  $path_parts
-	// 	 * @var array  $absolute_path
-	// 	 *
-	// 	 */
-	// 	header("Content-Type: application/json");
-	// 	echo json_encode([
-	// 		"matched_resource_count" => $matched_resource_count,
-	// 		"required_match" => $required_match,
-	// 		"resource_dir" => $resource_dir,
-	// 		"resource_file" => $resource_file,
-	// 		"rule_prefix" => $this->rule->prefix ?? "",
-	// 		"absolute_path_with_rule_prefix" => "{$this->ROOT_DIR}/{$this->rule->prefix}",
-	// 		"path_parts" => $this->ctx->path_parts,
-	// 		"absolute_path" => explode("/", trim("{$this->ROOT_DIR}/{$this->rule->target}", "/"))
-	// 	]);
-	// 	exit;
-	// }
 
 	private function handleAPIRuleNotFound(): never
 	{
