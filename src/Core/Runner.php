@@ -82,8 +82,7 @@ class Runner
 
 	private function serveRedirect(): never
 	{
-		http_response_code(301);
-		header("Location: " . $this->rule->target);
+		header("Location: " . $this->rule->target, true, 301);
 		exit;
 	}
 
@@ -173,7 +172,7 @@ class Runner
 			}
 		}
 
-		// if we somehow ended up with no target file, check if it contains an index.php or index.html
+		// if we somehow ended up with no target file, check if it contains an index.php or index.html, this works in a case where we have `/` as the path or the request matches a folder; in that case, we want to go into the folder to find the index file
 		if (empty($resource_file)) {
 			if (is_file("{$resource_dir}/index.html")) {
 				$resource_file = "index.html";
