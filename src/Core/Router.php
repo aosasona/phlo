@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phlo\Core;
 
-
 class Router
 {
 	/**
@@ -50,6 +49,7 @@ class Router
 			http_response_code(404);
 			exit;
 		}
+
 		$rule->serve($context);
 	}
 }

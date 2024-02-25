@@ -18,20 +18,20 @@ class Rule
 		return $this->$name;
 	}
 
-	/**
-	 * @param  string  $prefix  The prefix of the URL to match against
-	 */
 	public function __construct(string $prefix)
 	{
 		$this->prefix = $prefix;
 	}
 
-	public static function new(string $name): Rule
+	/**
+	 * @param  string  $prefix  The prefix of the URL to match against
+	 */
+	public static function new(string $prefix): Rule
 	{
-		return new Rule($name);
+		return new Rule($prefix);
 	}
 
-	public function serve(Context &$ctx): void
+	public function serve(Context &$ctx): never
 	{
 		$runner = new Runner($ctx, $this);
 		$runner->run();

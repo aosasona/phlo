@@ -57,23 +57,25 @@ class Runner
 		$resources = $this->getRequestResources();
 		if (!$resources) {
 			http_response_code(404);
+
 			$not_found_file = "{$this->rule->target}/404.html";
 			if (is_file($not_found_file)) {
 				header("Content-Type: text/html; charset=utf-8");
 				readfile($not_found_file);
 			}
+
 			exit;
 		}
 
 		$this->executeFolderScopedMiddleware($resources['dir'] ?? "");
 		$file = "{$resources['dir']}/{$resources['file']}";
-		$mime_type = self::getMimeTypeFromPath($file);
+		$mime_type = self::getMimeTypeFromPath($resources['file'], $this->rule->rule_type);
 		header("Content-Type: $mime_type");
 
 		// make the ctx available to the file
 		$ctx = $this->ctx;
 
-		require $file;
+		require_once $file;
 		exit;
 	}
 
@@ -101,7 +103,7 @@ class Runner
 			exit;
 		}
 
-		$mime_type = self::getMimeTypeFromPath($this->rule->target);
+		$mime_type = self::getMimeTypeFromPath($this->rule->target, $this->rule->rule_type);
 		header("Content-Type: {$mime_type}");
 		readfile($this->rule->target);
 		exit;
@@ -109,7 +111,6 @@ class Runner
 
 	private function getRequestResources(): array | null
 	{
-		$start_time = microtime(true);
 		$resource_dir = $this->rule->target;
 		$resource_file = null;
 		$params = [];
@@ -172,9 +173,13 @@ class Runner
 			}
 		}
 
-		// for static resources, if the path is "" (empty string), check if index.html exists
-		if (count($this->ctx->path_parts) == 0 && is_file("{$resource_dir}/index.html")) {
-			$resource_file = "index.html";
+		// if we somehow ended up with no target file, check if it contains an index.php or index.html
+		if (empty($resource_file)) {
+			if (is_file("{$resource_dir}/index.html")) {
+				$resource_file = "index.html";
+			} elseif (is_file("{$resource_dir}/index.php")) {
+				$resource_file = "index.php";
+			}
 		}
 
 		// make sure it is an exact match by comparing the number of path parts in the request with the number of path parts in the rule (excluding the route prefix)
@@ -193,7 +198,6 @@ class Runner
 			"dir" => $resource_dir,
 			"file" => $resource_file,
 			"params" => $params,
-			"time_taken" => microtime(true) - $start_time,
 		];
 	}
 
@@ -285,12 +289,12 @@ class Runner
 		]);
 	}
 
-	public static function getMimeTypeFromPath(string $filepath): string
+	public static function getMimeTypeFromPath(string $filepath, RuleType $rule_type): string
 	{
 		$extension = pathinfo($filepath, PATHINFO_EXTENSION);
 		// mime_content_type fails on some systems, so we do a manual lookup first and fallback to mime_content_type
 		return match ($extension) {
-			"php" => "",
+			"php" => $rule_type === RuleType::API ? "" : "text/html", // in API routes, the `$ctx->send` method is used to control the response type
 			"js" => "application/javascript",
 			"css" => "text/css",
 			"html" => "text/html",
@@ -325,7 +329,7 @@ class Runner
 			"rtf" => "application/rtf",
 			"7z" => "application/x-7z-compressed",
 			"tar.xz" => "application/x-xz",
-			default => mime_content_type($filepath)
+			default => mime_content_type(basename($filepath))
 		};
 	}
 

@@ -234,7 +234,7 @@ class Context
 			throw new Exception("File not found");
 		}
 
-		$mime_type = Runner::getMimeTypeFromPath($path);
+		$mime_type = Runner::getMimeTypeFromPath($path, RuleType::STATIC);
 		if ($this->response_content_type) {
 			$mime_type = $this->response_content_type;
 		}
