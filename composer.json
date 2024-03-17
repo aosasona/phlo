@@ -2,7 +2,6 @@
 	"name": "trulyao/phlo",
 	"description": "A tiny microframework for rapid modern web development",
 	"type": "library",
-	"minimum-stability": "dev",
 	"require": {
 		"php": ">=8.2"
 	},
