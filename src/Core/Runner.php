@@ -219,10 +219,14 @@ class Runner
 	{
 		$middleware_file = "{$target_folder}/_middleware.php";
 		if (is_file($middleware_file)) {
+			ob_start();
+
 			require_once $middleware_file;
 			if (function_exists("_global_init")) {
 				_global_init($this->ctx);
 			}
+
+			ob_end_clean();
 		}
 	}
 
