@@ -215,34 +215,31 @@ class Runner
 		header("Accept: " . implode(",", $accepted_mime_types));
 	}
 
-	// private function validateRequestMimeType(array $accepted_mime_types): never
-	// {
-	// 	// fix this later
-	// 	$mime_type = $this->ctx->headers['content-type'] ?? "";
-	// 	if ((!in_array($mime_type, $accepted_mime_types) && !in_array(MimeType::ANY->value, $accepted_mime_types))) {
-	// 		http_response_code(415);
-	// 		exit;
-	// 	}
-	// }
-
-
 	private function executeFolderScopedMiddleware(string $target_folder): void
 	{
 		$middleware_file = "{$target_folder}/_middleware.php";
 		if (is_file($middleware_file)) {
+			ob_start();
+
 			require_once $middleware_file;
 			if (function_exists("_global_init")) {
 				_global_init($this->ctx);
 			}
+
+			ob_end_clean();
 		}
 	}
 
 	private function executeFileScopedMiddleware(): void
 	{
+		ob_start();
+
 		if (!function_exists("_init")) {
 			return;
 		}
 		_init($this->ctx);
+
+		ob_end_clean();
 	}
 
 	private function executeAPIMethodHandler(): void
