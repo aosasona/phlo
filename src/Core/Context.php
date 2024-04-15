@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phlo\Core;
 
 use Exception;
-use Phlo\Config;
 
 
 class Context
@@ -53,11 +52,6 @@ class Context
 		$this->files = $_FILES;
 		$this->cookies = self::sanitizeRecursively($_COOKIE ?? []);
 		$this->session = self::sanitizeRecursively($_SESSION ?? []);
-	}
-
-	public function getEnv(string $key, $default): string
-	{
-		return Config::get($key, $default);
 	}
 
 	public function setParams(array $params = []): self
