@@ -56,15 +56,7 @@ class Runner
 
         $resources = $this->getRequestResources();
         if (!$resources) {
-            http_response_code(404);
-
-            $not_found_file = "{$this->rule->target}/404.html";
-            if (is_file($not_found_file)) {
-                header("Content-Type: text/html; charset=utf-8");
-                readfile($not_found_file);
-            }
-
-            exit;
+            $this->serveNotFound();
         }
 
         $this->executeFolderScopedMiddleware($resources['dir'] ?? "");
@@ -93,13 +85,7 @@ class Runner
 
 
         if (!is_file($this->rule->target)) {
-            http_response_code(404);
-            $not_found_file = "{$this->rule->target}/404.html";
-            if (is_file($not_found_file)) {
-                header("Content-Type: text/html; charset=utf-8");
-                readfile($not_found_file);
-            }
-            exit;
+            $this->serveNotFound();
         }
 
         $mime_type = self::getMimeTypeFromPath($this->rule->target, $this->rule->rule_type);
@@ -108,8 +94,28 @@ class Runner
         exit;
     }
 
+    private function serveNotFound(): never
+    {
+        http_response_code(404);
+
+        if (is_file($not_found_file = "{$this->rule->target}/404.html")) {
+            header("Content-Type: text/html; charset=utf-8");
+            readfile($not_found_file);
+        } elseif(is_file($not_found_file = "{$this->rule->target}/404.php")) {
+            require_once $not_found_file;
+        } else {
+            echo "<h1>404 Not Found</h1>";
+        }
+
+        exit;
+    }
+
     private function getRequestResources(): array | null
     {
+        if(($_ENV["debug"] ?? "") == "true") {
+            $start = microtime(true);
+        }
+
         $resource_dir = $this->rule->target;
         $resource_file = null;
         $params = [];
@@ -133,20 +139,15 @@ class Runner
                 break;
             }
 
-            // check for an index.php in that folder
-            if (is_file("{$resource_dir}/index.php")) {
-                $resource_file = "index.php";
-                break;
-            }
-
-            // for static resources, check if the file exists
-            if (is_file("{$resource_dir}/{$resource}")) {
+            // for static resources, check if the file itself exists
+            if (is_file("{$resource_dir}/{$resource}") && $this->rule->rule_type === RuleType::STATIC) {
                 $resource_file = $resource;
                 break;
             }
 
             // go through every file and folder in the folder and check if it matches the format [param].php where param could be anything
             $files = scandir($resource_dir);
+            // TODO: rewrite most of these to use preg_match if proven to be faster later
             foreach ($files as $file) {
                 if (str_starts_with($file, "[") && str_ends_with($file, "].php")) {
                     $resource_file = $file;
@@ -154,7 +155,7 @@ class Runner
                     $params[$key] = $resource;
 
                     // make sure this is the last iteration before breaking
-                    if ($idx === count($this->ctx->path_parts) - 1) {
+                    if ($idx === (count($this->ctx->path_parts) - 1)) {
                         break;
                     }
                     continue;
@@ -165,20 +166,22 @@ class Runner
                     $params[$key] = $resource;
 
                     // make sure this is the last iteration before breaking to prevent running an handler that doesn't match the request
-                    if ($idx === count($this->ctx->path_parts) - 1) {
+                    if ($idx === (count($this->ctx->path_parts) - 1)) {
                         break;
                     }
                 }
             }
         }
 
-        // if we somehow ended up with no target file, check if it contains an index.php or index.html, this works in a case where we have `/` as the path or the request matches a folder; in that case, we want to go into the folder to find the index file
-        if (empty($resource_file)) {
-            if (is_file("{$resource_dir}/index.html")) {
-                $resource_file = "index.html";
-            } elseif (is_file("{$resource_dir}/index.php")) {
-                $resource_file = "index.php";
-            }
+        // if we somehow ended up with no target file, check if it contains an index.php or index.html, this works in a case where we have `/` as the path or the request matches a folder; in that case, we want to go into the folder to find the index file, we also do not want `/foo/bar/baz` to match `/foo/index.html` if `bar/baz` does not exist, we want it to match `/foo/bar/baz/index.{html,php}`
+
+        $path_root = $this->rule->target."/".implode("/", $this->ctx->path_parts);
+        if (empty($resource_file) && is_dir($path_root)) {
+            $resource_file = match(true) {
+                is_file("{$path_root}/index.html") => "index.html",
+                is_file("{$path_root}/index.php") => "index.php",
+                default => null,
+            };
         }
 
         // make sure it is an exact match by comparing the number of path parts in the request with the number of path parts in the rule (excluding the route prefix)
@@ -193,10 +196,16 @@ class Runner
             return null;
         }
 
+        if(($_ENV["debug"] ?? "") == "true") {
+            $end = microtime(true);
+            $execution_time = ($end - $start) * 1000;
+        }
+
         return [
             "dir" => $resource_dir,
             "file" => $resource_file,
             "params" => $params,
+            "execution_time" => $execution_time ?? "untracked",
         ];
     }
 
