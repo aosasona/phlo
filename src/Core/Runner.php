@@ -59,6 +59,7 @@ class Runner
             $this->serveNotFound();
         }
 
+        $this->ctx->setParams($resources['params'] ?? []);
         $this->executeFolderScopedMiddleware($resources['dir'] ?? "");
         $file = "{$resources['dir']}/{$resources['file']}";
         $mime_type = self::getMimeTypeFromPath($file, $this->rule->rule_type);
@@ -66,7 +67,6 @@ class Runner
 
         // make the ctx available to the file
         $ctx = $this->ctx;
-
         require_once $file;
         exit;
     }
