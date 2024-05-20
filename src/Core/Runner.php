@@ -101,7 +101,7 @@ class Runner
         if (is_file($not_found_file = "{$this->rule->target}/404.html")) {
             header("Content-Type: text/html; charset=utf-8");
             readfile($not_found_file);
-        } elseif(is_file($not_found_file = "{$this->rule->target}/404.php")) {
+        } elseif (is_file($not_found_file = "{$this->rule->target}/404.php")) {
             require_once $not_found_file;
         } else {
             echo "<h1>404 Not Found</h1>";
@@ -112,7 +112,7 @@ class Runner
 
     private function getRequestResources(): array | null
     {
-        if(($_ENV["debug"] ?? "") == "true") {
+        if (($_ENV["debug"] ?? "") == "true") {
             $start = microtime(true);
         }
 
@@ -137,6 +137,19 @@ class Runner
             if (is_file("{$resource_dir}/{$resource}.html")) {
                 $resource_file = "{$resource}.html";
                 break;
+            }
+
+            // check for an index.php in that folder if we are in an API rule
+            // (Ayodeji) NOTE: this was previously a bug for static paths (which was fixed in L192), so, it is momentarily disabled for static paths until I can do further testing
+            if (is_file("{$resource_dir}/index.php") && $this->rule->rule_type === RuleType::API) {
+                // ensure we are at the last part of the path and look into the index.php
+                $final_path_part = end($this->ctx->path_parts);
+                $dir_parts = explode("/", $resource_dir);
+                $last_dir_part = array_pop($dir_parts);
+                if ($final_path_part == $last_dir_part) {
+                    $resource_file = "index.php";
+                    break;
+                }
             }
 
             // for static resources, check if the file itself exists
@@ -175,9 +188,9 @@ class Runner
 
         // if we somehow ended up with no target file, check if it contains an index.php or index.html, this works in a case where we have `/` as the path or the request matches a folder; in that case, we want to go into the folder to find the index file, we also do not want `/foo/bar/baz` to match `/foo/index.html` if `bar/baz` does not exist, we want it to match `/foo/bar/baz/index.{html,php}`
 
-        $path_root = $this->rule->target."/".implode("/", $this->ctx->path_parts);
+        $path_root = $this->rule->target . "/" . implode("/", $this->ctx->path_parts);
         if (empty($resource_file) && is_dir($path_root)) {
-            $resource_file = match(true) {
+            $resource_file = match (true) {
                 is_file("{$path_root}/index.html") => "index.html",
                 is_file("{$path_root}/index.php") => "index.php",
                 default => null,
@@ -196,7 +209,7 @@ class Runner
             return null;
         }
 
-        if(($_ENV["debug"] ?? "") == "true") {
+        if (($_ENV["debug"] ?? "") == "true") {
             $end = microtime(true);
             $execution_time = ($end - $start) * 1000;
         }
